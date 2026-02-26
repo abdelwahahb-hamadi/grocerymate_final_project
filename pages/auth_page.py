@@ -1,5 +1,4 @@
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 
 from pages.base_page import BasePage
 from utils.constants import AUTH_URL, BASE_URL
@@ -14,29 +13,26 @@ class AuthPage(BasePage):
     def open_auth(self):
         self.open(AUTH_URL)
 
-    def login(self, email: str, password: str):
-        """
-        Real behavior:
-        - You sign in on /auth
-        - App redirects you to Home (/)
-        - Logout button appears only when you open /auth again
-        """
+    def login_attempt(self, email: str, password: str):
+        """Click Sign In without assuming success (used for negative tests)."""
         self.type(self.EMAIL, email)
         self.type(self.PASSWORD, password)
         self.click(self.SIGN_IN)
 
-        # Wait until we leave /auth (redirect to home or any other page)
+    def login(self, email: str, password: str):
+        """Login expecting success -> wait for redirect away from /auth."""
+        self.login_attempt(email, password)
         self.wait.until(lambda d: "/auth" not in d.current_url)
 
     def go_to_auth_after_login(self):
-        """Open /auth again to see Logout button (as you do manually)."""
         self.open_auth()
 
     def is_logged_in(self) -> bool:
-        """On /auth when logged in, Logout button is visible."""
         return self.is_visible(self.LOGOUT)
 
+    def logout(self):
+        self.click(self.LOGOUT)
+
     def assert_redirected_to_home(self):
-        # home can be BASE_URL or BASE_URL + '/'
         url = self.driver.current_url.rstrip("/")
         assert url == BASE_URL, f"Expected redirect to home, but got: {self.driver.current_url}"
